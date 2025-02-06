@@ -42,7 +42,7 @@ def start_status_update(gui):
 def update_status(gui):
     selected_robots = gui.get_selected_robots()
     selected_urs = gui.get_selected_urs()
-    active_counts = {"wrench": 0, "twist": 0, "arm": 0, "admittance": 0}
+    active_counts = {"force_torque_sensor_controller": 0, "twist_controller": 0, "arm_controller": 0, "admittance": 0}
     total_count = len(selected_robots) * len(selected_urs)
     
     for robot in selected_robots:
@@ -58,14 +58,14 @@ def update_status(gui):
                 pass
     
     status_text = """
-    Wrench: {}/{} {}
-    Twist: {}/{} {}
-    Arm: {}/{} {}
-    Admittance: {}/{} {}
+    Force/Torque Sensor: {}/{} {}
+    Twist Controller: {}/{} {}
+    Arm Controller: {}/{} {}
+    Admittance Controller: {}/{} {}
     """.format(
-        active_counts["wrench"], total_count, get_status_symbol(active_counts["wrench"], total_count),
-        active_counts["twist"], total_count, get_status_symbol(active_counts["twist"], total_count),
-        active_counts["arm"], total_count, get_status_symbol(active_counts["arm"], total_count),
+        active_counts["force_torque_sensor_controller"], total_count, get_status_symbol(active_counts["force_torque_sensor_controller"], total_count),
+        active_counts["twist_controller"], total_count, get_status_symbol(active_counts["twist_controller"], total_count),
+        active_counts["arm_controller"], total_count, get_status_symbol(active_counts["arm_controller"], total_count),
         active_counts["admittance"], total_count, get_status_symbol(active_counts["admittance"], total_count),
     )
     
