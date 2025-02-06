@@ -55,6 +55,27 @@ class ROSGui(QWidget):
         self.status_timer.timeout.connect(lambda: start_status_update(self))
         self.status_timer.start(30000)
         
+        # Buttons for ROS Actions
+        buttons = {
+            "Check Status": lambda: start_status_update(self),
+            "Open RVIZ": open_rviz,
+            "Start Virtual Leader": virtual_leader,
+            "Start Virtual Object": start_virtual_object,
+            "Compute Object Center": start_compute_object_center,
+            "Zero F/T Sensors": zero_ft_sensors,
+            "Turn on Wrench Controllers": turn_on_wrench_controllers,
+            "Turn on Arm Controllers": turn_on_arm_controllers,
+            "Turn on Twist Controllers": turn_on_twist_controllers,
+            "Enable all URs": enable_all_URs,
+            "Update UR relative to object": update_UR_relative_to_object,
+            "Move to Initial Pose": move_to_initial_pose,
+            "Turn on Admittance Controller": turn_on_admittance_controller
+        }
+
+        for text, function in buttons.items():
+            btn = QPushButton(text)
+            btn.clicked.connect(lambda checked, f=function: f(self))
+            left_layout.addWidget(btn)
         
         # Buttons for ROS actions
         self.btn_virtual_leader = QPushButton("Start Virtual Leader")
@@ -154,3 +175,17 @@ class ROSGui(QWidget):
         main_layout.addWidget(self.btn_save_poses)
         
         self.setLayout(main_layout)
+
+
+    def get_selected_robots(self):
+            """Returns a list of selected robots."""
+            return [name for name, checkbox in self.robots.items() if checkbox.isChecked()]
+
+    def get_selected_urs(self):
+        """Returns a list of selected UR prefixes."""
+        ur_prefixes = []
+        if self.ur10_l.isChecked():
+            ur_prefixes.append("UR10_l")
+        if self.ur10_r.isChecked():
+            ur_prefixes.append("UR10_r")
+        return ur_prefixes
