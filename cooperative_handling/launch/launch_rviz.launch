@@ -1,0 +1,5 @@
+<launch>
+    
+    <node type="rviz" name="rviz_handling" pkg="rviz" args="-d $(find cooperative_handling)/rviz/cooperative_handling.rviz" /> 
+
+  </launch>
