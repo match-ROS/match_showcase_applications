@@ -72,6 +72,10 @@ class ROSGui(QWidget):
         self.btn_quit_drivers = QPushButton("Quit Drivers")
         self.btn_quit_drivers.clicked.connect(self.quit_drivers)
 
+        # Button to open RVIZ
+        self.btn_open_rviz = QPushButton("Open RVIZ")
+        self.btn_open_rviz.clicked.connect(self.open_rviz)
+
         self.btn_check_status = QPushButton("Check Status")
         self.btn_check_status.clicked.connect(self.update_status)
         self.layout.addWidget(self.btn_check_status)
@@ -125,6 +129,7 @@ class ROSGui(QWidget):
         self.layout.addWidget(self.btn_compute_center)
         self.layout.addWidget(self.btn_launch_drivers)
         self.layout.addWidget(self.btn_quit_drivers)
+        self.layout.addWidget(self.btn_open_rviz)
         self.layout.addWidget(self.btn_zero_ft_sensors)
         self.layout.addLayout(move_pose_layout)  # Move buttons
         self.layout.addWidget(self.btn_turn_on_wrench)
@@ -195,6 +200,11 @@ class ROSGui(QWidget):
     def start_status_update(self):
         """Starts the status update in a separate thread to prevent GUI freezing."""
         threading.Thread(target=self.update_status, daemon=True).start()
+
+    def open_rviz(self):
+        """Opens RVIZ using roslaunch."""
+        command = "roslaunch cooperative_handling launch_rviz.launch"
+        subprocess.Popen(command, shell=True)
 
     def update_status(self):
         """Checks the status of ROS controllers using the controller_manager service."""
