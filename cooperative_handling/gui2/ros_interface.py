@@ -5,6 +5,7 @@ import rospy
 from geometry_msgs.msg import PoseStamped
 from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtCore import QTimer
+import tf.transformations as tf_trans
 
 import rospy
 from geometry_msgs.msg import PoseStamped
@@ -33,19 +34,29 @@ class ROSInterface:
         self.updated_poses = {}
 
         def callback(data, robot_ur):
-            """Speichert die empfangenen Positionen in einem Dictionary und debuggt den Empfang."""
-            self.updated_poses[robot_ur] = {
-                "x": data.pose.position.x,
-                "y": data.pose.position.y,
-                "z": data.pose.position.z
-            }
-            print(f"✅ Received pose for {robot_ur}: {self.updated_poses[robot_ur]}")  # <-- Debugging
+            """Receives relative pose and extracts both position (x, y, z) and orientation (Rx, Ry, Rz) in Euler angles."""
+            
+            # Extract position
+            position = data.pose.position
+            x, y, z = position.x, position.y, position.z
 
-            # Falls alle Posen empfangen wurden, speichere sie in die YAML-Datei
+            # Extract orientation as quaternion
+            orientation = data.pose.orientation
+            quaternion = [orientation.x, orientation.y, orientation.z, orientation.w]
+
+            # Convert quaternion to Euler angles (roll, pitch, yaw)
+            rx, ry, rz = tf_trans.euler_from_quaternion(quaternion)
+
+            # Store the values in the dictionary
+            self.updated_poses[robot_ur] = {"x": x, "y": y, "z": z, "rx": rx, "ry": ry, "rz": rz}
+
+            print(f"✅ Received pose for {robot_ur}: {self.updated_poses[robot_ur]}")
+
+            # Check if all poses have been received, then trigger save
             if len(self.updated_poses) >= len(selected_robots) * len(selected_urs):
-                print("✅ All poses received, triggering save_poses_to_yaml()")
                 rospy.signal_shutdown("Pose update complete")
                 self.save_poses_to_yaml()
+
 
 
         for robot in selected_robots:
@@ -62,7 +73,8 @@ class ROSInterface:
 
         # Convert received poses into table-compatible format
         for robot_ur, pose in self.updated_poses.items():
-            poses[robot_ur] = [pose["x"], pose["y"], pose["z"]]
+            poses[robot_ur] = [pose["x"], pose["y"], pose["z"], pose["rx"], pose["ry"], pose["rz"]]
+
 
         # Save collected poses using the existing method in gui_layout
         self.gui.save_relative_poses(poses)
@@ -315,7 +327,7 @@ def turn_on_coop_admittance_controller(gui):
             relative_pose = gui.get_relative_pose(robot, ur_prefix)
 
             # Convert list to ROS parameter format
-            relative_pose_str = f"[{relative_pose[0]},{relative_pose[1]},{relative_pose[2]}]"
+            relative_pose_str = f"[{relative_pose[0]},{relative_pose[1]},{relative_pose[2]},{relative_pose[3]},{relative_pose[4]},{relative_pose[5]}]"
 
             command = f"ssh -t -t {robot} 'source ~/.bashrc; export ROS_MASTER_URI=http://roscore:11311/; source /opt/ros/noetic/setup.bash; source ~/{gui.workspace_name}/devel/setup.bash; roslaunch manipulator_control dezentralized_admittance_controller.launch tf_prefix:={robot} UR_prefix:={ur_prefix} set_reference_at_runtime:={set_reference} relative_pose:={relative_pose_str}; exec bash'"
             

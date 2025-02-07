@@ -13,14 +13,14 @@ import math
 class ComputeObjectCenter:
 
     def config(self):
-        self.robot_names = rospy.get_param('~robot_names', ['mur620b'])
+        self.robot_names = rospy.get_param('~robot_names', ['mur620b,mur620a,mur620c'])
         self.ur_l_prefix = rospy.get_param('~UR_l_prefix', 'UR10_l')
         self.ur_r_prefix = rospy.get_param('~UR_r_prefix', 'UR10_r')
         self.set_object_pose_topic = rospy.get_param('~set_object_pose_topic', '/virtual_object/set_pose')
 
     def __init__(self):
         self.config()
-        self.robot_poses = [[None, None], [None, None]]
+        self.robot_poses = [[None, None] for i in range(len(self.robot_names))] 
 
         self.object_pose_pub = rospy.Publisher(self.set_object_pose_topic, PoseStamped, queue_size=1)
         rospy.sleep(1) # wait for publisher to be registered

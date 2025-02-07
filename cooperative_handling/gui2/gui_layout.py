@@ -89,8 +89,8 @@ class ROSGui(QWidget):
         main_layout.addLayout(left_layout)
         
         # Right Side (Table for Relative Poses)
-        self.table = QTableWidget(8, 3)
-        self.table.setHorizontalHeaderLabels(["X", "Y", "Z"])
+        self.table = QTableWidget(8, 6)
+        self.table.setHorizontalHeaderLabels(["X", "Y", "Z", "Rx", "Ry", "Rz"])
         self.table.setVerticalHeaderLabels([
             "mur620a/UR10_l", "mur620a/UR10_r", "mur620b/UR10_l", "mur620b/UR10_r", 
             "mur620c/UR10_l", "mur620c/UR10_r", "mur620d/UR10_l", "mur620d/UR10_r"
@@ -141,7 +141,7 @@ class ROSGui(QWidget):
             else:
                 poses[row_label] = [
                     float(self.table.item(row, col).text()) if self.table.item(row, col) else 0.0
-                    for col in range(self.table.columnCount())
+                    for col in range(6)  # Jetzt für X, Y, Z, Rx, Ry, Rz
                 ]
 
         # Save values to poses.yaml
@@ -170,7 +170,7 @@ class ROSGui(QWidget):
             if self.table.verticalHeaderItem(row).text() == row_label:
                 return [
                     float(self.table.item(row, col).text()) if self.table.item(row, col) else 0.0
-                    for col in range(self.table.columnCount())
+                    for col in range(6)  # Jetzt für X, Y, Z, Rx, Ry, Rz
                 ]
         
         # Default value if no match is found
