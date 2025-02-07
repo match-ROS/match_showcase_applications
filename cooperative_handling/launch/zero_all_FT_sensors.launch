@@ -3,7 +3,7 @@
     <arg name="robot_names" default="[]" />
     <arg name="UR_prefixes" default="['UR10_l', 'UR10_r']" />
 
-    <node pkg="handling" type="zero_all_FT_sensors.py" name="zero_all_FT_sensors" output="screen">
+    <node pkg="cooperative_handling" type="zero_all_FT_sensors.py" name="zero_all_FT_sensors" output="screen">
         <rosparam param="robot_names" subst_value="True">$(arg robot_names) </rosparam>
         <rosparam param="UR_prefixes" subst_value="True">$(arg UR_prefixes) </rosparam>
     </node>
