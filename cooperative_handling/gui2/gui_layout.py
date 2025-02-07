@@ -100,7 +100,6 @@ class ROSGui(QWidget):
         
         # Save Button
         self.btn_save_poses = QPushButton("Save Poses")
-        self.btn_save_poses.setEnabled(False)  # Deaktiviert, bis Werte aktualisiert wurden
         self.btn_save_poses.clicked.connect(lambda: self.save_relative_poses())
 
         self.btn_update_poses = QPushButton("Update Poses")
@@ -123,18 +122,32 @@ class ROSGui(QWidget):
             ur_prefixes.append("UR10_r")
         return ur_prefixes
 
-    def save_relative_poses(self):
-        """Sammelt die Werte aus der Tabelle und speichert sie."""
+    def save_relative_poses(self, updated_poses=None):
+        """Collects values from the table and saves them. If updated_poses is provided, those values are used first."""
         poses = {}
+
+        # Convert `updated_poses` keys to match the table format ("mur620c/UR10_l")
+        if updated_poses:
+            formatted_updated_poses = {f"{robot}/{ur}": pos for (robot, ur), pos in updated_poses.items()}
+        else:
+            formatted_updated_poses = {}
+
         for row in range(self.table.rowCount()):
             row_label = self.table.verticalHeaderItem(row).text()
-            poses[row_label] = [
-                float(self.table.item(row, col).text()) if self.table.item(row, col) else 0.0
-                for col in range(self.table.columnCount())
-            ]
-        
-        relative_poses = RelativePoses()  # Erstelle eine Instanz der Klasse
+
+            # Use updated pose values if available; otherwise, keep existing table values
+            if row_label in formatted_updated_poses:
+                poses[row_label] = formatted_updated_poses[row_label]
+            else:
+                poses[row_label] = [
+                    float(self.table.item(row, col).text()) if self.table.item(row, col) else 0.0
+                    for col in range(self.table.columnCount())
+                ]
+
+        # Save values to poses.yaml
+        relative_poses = RelativePoses()
         relative_poses.save_poses(poses)
+
 
 
     def load_relative_poses(self):

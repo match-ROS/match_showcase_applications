@@ -4,6 +4,7 @@ import threading
 import rospy
 from geometry_msgs.msg import PoseStamped
 from PyQt5.QtWidgets import QTableWidgetItem
+from PyQt5.QtCore import QTimer
 
 import rospy
 from geometry_msgs.msg import PoseStamped
@@ -12,16 +13,15 @@ class ROSInterface:
     def __init__(self, gui):
         self.gui = gui
         self.workspace_name = "catkin_ws_recker"
-        self.updated_poses = {}  # Zwischenspeicher für empfangene Posen
+        self.updated_poses = {}
 
     def update_poses(self):
-        """Startet einen Thread für das Abonnieren der relativen Posen."""
+        """Startet einen Thread für das Abonnieren der relativen Posen und Speichert in YAML."""
         thread = threading.Thread(target=self.subscribe_to_relative_poses, daemon=True)
         thread.start()
 
-
     def subscribe_to_relative_poses(self):
-        """Abonniert die relativen Posen der ausgewählten Roboter."""
+        """Abonniert die relativen Posen der ausgewählten Roboter und speichert sie in YAML."""
         selected_robots = self.gui.get_selected_robots()
         selected_urs = self.gui.get_selected_urs()
 
@@ -29,17 +29,23 @@ class ROSInterface:
             print("No robots or URs selected. Skipping update.")
             return
 
-        rospy.init_node("update_relative_poses", anonymous=True, disable_signals=True)  # Verhindert Blockieren
+        rospy.init_node("update_relative_poses", anonymous=True, disable_signals=True)
+        self.updated_poses = {}
 
         def callback(data, robot_ur):
-            """Speichert die empfangenen Positionen und startet GUI-Update im Haupt-Thread."""
-            self.updated_poses[robot_ur] = (data.pose.position.x, data.pose.position.y, data.pose.position.z)
-            print(f"Received pose for {robot_ur}: {self.updated_poses[robot_ur]}")
+            """Speichert die empfangenen Positionen in einem Dictionary und debuggt den Empfang."""
+            self.updated_poses[robot_ur] = {
+                "x": data.pose.position.x,
+                "y": data.pose.position.y,
+                "z": data.pose.position.z
+            }
+            print(f"✅ Received pose for {robot_ur}: {self.updated_poses[robot_ur]}")  # <-- Debugging
 
-            # Falls alle selektierten Roboter Daten empfangen haben, update Tabelle über den Qt-Hauptthread
+            # Falls alle Posen empfangen wurden, speichere sie in die YAML-Datei
             if len(self.updated_poses) >= len(selected_robots) * len(selected_urs):
+                print("✅ All poses received, triggering save_poses_to_yaml()")
                 rospy.signal_shutdown("Pose update complete")
-                self.gui.invokeMethod(self.gui, "insert_updated_poses")
+                self.save_poses_to_yaml()
 
 
         for robot in selected_robots:
@@ -48,37 +54,25 @@ class ROSInterface:
                 rospy.Subscriber(topic_name, PoseStamped, callback, (robot, ur))
                 print(f"Subscribed to {topic_name}")
 
-        rospy.spin()  # Hält den Subscriber aktiv, blockiert aber nicht die GUI
+        rospy.spin()
 
-    def insert_updated_poses(self):
-        """Trägt die aktualisierten Werte in die Tabelle ein und aktiviert den Save-Button."""
-        for row in range(self.gui.table.rowCount()):
-            robot_ur = self.gui.table.verticalHeaderItem(row).text()
-            if robot_ur in self.updated_poses:
-                x, y, z = self.updated_poses[robot_ur]
+    def save_poses_to_yaml(self):
+        """Collects received relative poses and saves them in the same format as the table."""
+        poses = {}
 
-                # GUI-Elemente in den Haupt-Thread übergeben
-                self.gui.table.setItem(row, 0, QTableWidgetItem(f"{x:.4f}"))
-                self.gui.table.setItem(row, 1, QTableWidgetItem(f"{y:.4f}"))
-                self.gui.table.setItem(row, 2, QTableWidgetItem(f"{z:.4f}"))
+        # Convert received poses into table-compatible format
+        for robot_ur, pose in self.updated_poses.items():
+            poses[robot_ur] = [pose["x"], pose["y"], pose["z"]]
 
-        # Aktiviert den "Save Poses"-Button nach dem ersten Update
+        # Save collected poses using the existing method in gui_layout
+        self.gui.save_relative_poses(poses)
+
+        # Reload table values immediately
+        self.gui.load_relative_poses()
+        self.gui.table.viewport().update()  # Forces an immediate redraw
+
+        # Enable the "Save Poses" button after the first update
         self.gui.btn_save_poses.setEnabled(True)
-        print("Updated table with received poses.")
-
-    def insert_updated_poses(self):
-        """Trägt die aktualisierten Werte in die Tabelle ein und aktiviert den Save-Button."""
-        for row in range(self.gui.table.rowCount()):
-            robot_ur = self.gui.table.verticalHeaderItem(row).text()
-            if robot_ur in self.updated_poses:
-                x, y, z = self.updated_poses[robot_ur]
-                self.gui.table.setItem(row, 0, QTableWidgetItem(str(x)))
-                self.gui.table.setItem(row, 1, QTableWidgetItem(str(y)))
-                self.gui.table.setItem(row, 2, QTableWidgetItem(str(z)))
-
-        # Aktiviert den "Save Poses"-Button nach dem ersten Update
-        self.gui.btn_save_poses.setEnabled(True)
-
 
 
 
