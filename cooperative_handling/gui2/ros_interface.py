@@ -1,6 +1,86 @@
 import subprocess
 import yaml
 import threading
+import rospy
+from geometry_msgs.msg import PoseStamped
+from PyQt5.QtWidgets import QTableWidgetItem
+
+import rospy
+from geometry_msgs.msg import PoseStamped
+
+class ROSInterface:
+    def __init__(self, gui):
+        self.gui = gui
+        self.workspace_name = "catkin_ws_recker"
+        self.updated_poses = {}  # Zwischenspeicher für empfangene Posen
+
+    def update_poses(self):
+        """Startet einen Thread für das Abonnieren der relativen Posen."""
+        thread = threading.Thread(target=self.subscribe_to_relative_poses, daemon=True)
+        thread.start()
+
+
+    def subscribe_to_relative_poses(self):
+        """Abonniert die relativen Posen der ausgewählten Roboter."""
+        selected_robots = self.gui.get_selected_robots()
+        selected_urs = self.gui.get_selected_urs()
+
+        if not selected_robots or not selected_urs:
+            print("No robots or URs selected. Skipping update.")
+            return
+
+        rospy.init_node("update_relative_poses", anonymous=True, disable_signals=True)  # Verhindert Blockieren
+
+        def callback(data, robot_ur):
+            """Speichert die empfangenen Positionen und startet GUI-Update im Haupt-Thread."""
+            self.updated_poses[robot_ur] = (data.pose.position.x, data.pose.position.y, data.pose.position.z)
+            print(f"Received pose for {robot_ur}: {self.updated_poses[robot_ur]}")
+
+            # Falls alle selektierten Roboter Daten empfangen haben, update Tabelle über den Qt-Hauptthread
+            if len(self.updated_poses) >= len(selected_robots) * len(selected_urs):
+                rospy.signal_shutdown("Pose update complete")
+                self.gui.invokeMethod(self.gui, "insert_updated_poses")
+
+
+        for robot in selected_robots:
+            for ur in selected_urs:
+                topic_name = f"/{robot}/{ur}/relative_pose"
+                rospy.Subscriber(topic_name, PoseStamped, callback, (robot, ur))
+                print(f"Subscribed to {topic_name}")
+
+        rospy.spin()  # Hält den Subscriber aktiv, blockiert aber nicht die GUI
+
+    def insert_updated_poses(self):
+        """Trägt die aktualisierten Werte in die Tabelle ein und aktiviert den Save-Button."""
+        for row in range(self.gui.table.rowCount()):
+            robot_ur = self.gui.table.verticalHeaderItem(row).text()
+            if robot_ur in self.updated_poses:
+                x, y, z = self.updated_poses[robot_ur]
+
+                # GUI-Elemente in den Haupt-Thread übergeben
+                self.gui.table.setItem(row, 0, QTableWidgetItem(f"{x:.4f}"))
+                self.gui.table.setItem(row, 1, QTableWidgetItem(f"{y:.4f}"))
+                self.gui.table.setItem(row, 2, QTableWidgetItem(f"{z:.4f}"))
+
+        # Aktiviert den "Save Poses"-Button nach dem ersten Update
+        self.gui.btn_save_poses.setEnabled(True)
+        print("Updated table with received poses.")
+
+    def insert_updated_poses(self):
+        """Trägt die aktualisierten Werte in die Tabelle ein und aktiviert den Save-Button."""
+        for row in range(self.gui.table.rowCount()):
+            robot_ur = self.gui.table.verticalHeaderItem(row).text()
+            if robot_ur in self.updated_poses:
+                x, y, z = self.updated_poses[robot_ur]
+                self.gui.table.setItem(row, 0, QTableWidgetItem(str(x)))
+                self.gui.table.setItem(row, 1, QTableWidgetItem(str(y)))
+                self.gui.table.setItem(row, 2, QTableWidgetItem(str(z)))
+
+        # Aktiviert den "Save Poses"-Button nach dem ersten Update
+        self.gui.btn_save_poses.setEnabled(True)
+
+
+
 
 def launch_ros(gui, package, launch_file):
     selected_robots = gui.get_selected_robots()
@@ -237,7 +317,7 @@ def turn_on_coop_admittance_controller(gui):
 
     for robot in selected_robots:
         for ur_prefix in selected_urs:
-            command = f"ssh -t -t {robot} 'source ~/.bashrc; export ROS_MASTER_URI=http://roscore:11311/; source /opt/ros/noetic/setup.bash; source ~/{self.workspace_name}/devel/setup.bash; roslaunch manipulator_control dezentralized_admittance_controller.launch tf_prefix:={robot} UR_prefix:={ur_prefix} set_reference_at_runtime:={set_reference}; exec bash'"
+            command = f"ssh -t -t {robot} 'source ~/.bashrc; export ROS_MASTER_URI=http://roscore:11311/; source /opt/ros/noetic/setup.bash; source ~/{gui.workspace_name}/devel/setup.bash; roslaunch manipulator_control dezentralized_admittance_controller.launch tf_prefix:={robot} UR_prefix:={ur_prefix} set_reference_at_runtime:={set_reference}; exec bash'"
             print(f"Executing SSH Command: {command}")
 
             # Open a new terminal and run the SSH command

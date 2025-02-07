@@ -3,10 +3,12 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLab
 from PyQt5.QtCore import QTimer, Qt
 from ros_interface import start_status_update, open_rviz, run_compute_object_center, launch_drivers, quit_drivers, zero_ft_sensors, turn_on_wrench_controllers, turn_on_arm_controllers, turn_on_twist_controllers, enable_all_urs, update_ur_relative_to_object, launch_ros, move_to_initial_pose, turn_on_coop_admittance_controller
 from relative_poses import RelativePoses
+from ros_interface import ROSInterface
 
 class ROSGui(QWidget):
     def __init__(self):
         super().__init__()
+        self.ros_interface = ROSInterface(self)
         self.setWindowTitle("Multi-Robot Demo")
         self.setGeometry(100, 100, 800, 500)
         
@@ -47,6 +49,10 @@ class ROSGui(QWidget):
         robot_ur_layout.addLayout(robot_layout)
         robot_ur_layout.addLayout(ur_layout)
         left_layout.addLayout(robot_ur_layout)
+
+        self.check_set_reference = QCheckBox("Set reference at runtime")
+        self.check_set_reference.setChecked(True)  # Standardmäßig aktiviert
+
         
         # Timer for status updates
         self.status_timer = QTimer()
@@ -77,6 +83,8 @@ class ROSGui(QWidget):
             btn = QPushButton(text)
             btn.clicked.connect(lambda checked, f=function: f())  # HIER GEÄNDERT!
             left_layout.addWidget(btn)
+
+        left_layout.addWidget(self.check_set_reference)
         
         main_layout.addLayout(left_layout)
         
@@ -92,7 +100,13 @@ class ROSGui(QWidget):
         
         # Save Button
         self.btn_save_poses = QPushButton("Save Poses")
+        self.btn_save_poses.setEnabled(False)  # Deaktiviert, bis Werte aktualisiert wurden
         self.btn_save_poses.clicked.connect(lambda: self.save_relative_poses())
+
+        self.btn_update_poses = QPushButton("Update Poses")
+        self.btn_update_poses.clicked.connect(self.ros_interface.update_poses)
+        main_layout.addWidget(self.btn_update_poses)
+
 
         main_layout.addWidget(self.btn_save_poses)
         
