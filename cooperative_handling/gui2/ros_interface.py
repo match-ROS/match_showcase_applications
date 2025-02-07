@@ -300,7 +300,7 @@ def move_to_initial_pose(gui, UR_prefix):
         subprocess.Popen(command, shell=True)
 
 def turn_on_coop_admittance_controller(gui):
-    """SSH into each selected robot and start the cooperative admittance controller."""
+    """Starts the decentralized admittance controller with the correct relative pose for each selected robot."""
     selected_robots = gui.get_selected_robots()
     selected_urs = gui.get_selected_urs()
     set_reference = "true" if gui.check_set_reference.isChecked() else "false"
@@ -311,7 +311,14 @@ def turn_on_coop_admittance_controller(gui):
 
     for robot in selected_robots:
         for ur_prefix in selected_urs:
-            command = f"ssh -t -t {robot} 'source ~/.bashrc; export ROS_MASTER_URI=http://roscore:11311/; source /opt/ros/noetic/setup.bash; source ~/{gui.workspace_name}/devel/setup.bash; roslaunch manipulator_control dezentralized_admittance_controller.launch tf_prefix:={robot} UR_prefix:={ur_prefix} set_reference_at_runtime:={set_reference}; exec bash'"
+            # Get the relative pose from the table
+            relative_pose = gui.get_relative_pose(robot, ur_prefix)
+
+            # Convert list to ROS parameter format
+            relative_pose_str = f"[{relative_pose[0]},{relative_pose[1]},{relative_pose[2]}]"
+
+            command = f"ssh -t -t {robot} 'source ~/.bashrc; export ROS_MASTER_URI=http://roscore:11311/; source /opt/ros/noetic/setup.bash; source ~/{gui.workspace_name}/devel/setup.bash; roslaunch manipulator_control dezentralized_admittance_controller.launch tf_prefix:={robot} UR_prefix:={ur_prefix} set_reference_at_runtime:={set_reference} relative_pose:={relative_pose_str}; exec bash'"
+            
             print(f"Executing SSH Command: {command}")
 
             # Open a new terminal and run the SSH command

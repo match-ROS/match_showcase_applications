@@ -161,3 +161,17 @@ class ROSGui(QWidget):
                 for col in range(self.table.columnCount()):
                     value = poses[row_label][col] if col < len(poses[row_label]) else 0.0
                     self.table.setItem(row, col, QTableWidgetItem(str(value)))
+
+    def get_relative_pose(self, robot, ur):
+        """Retrieves the relative pose [x, y, z] from the table for the given robot and UR arm."""
+        row_label = f"{robot}/{ur}"
+        
+        for row in range(self.table.rowCount()):
+            if self.table.verticalHeaderItem(row).text() == row_label:
+                return [
+                    float(self.table.item(row, col).text()) if self.table.item(row, col) else 0.0
+                    for col in range(self.table.columnCount())
+                ]
+        
+        # Default value if no match is found
+        return [0.0, 0.0, 0.0]
