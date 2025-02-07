@@ -10,7 +10,7 @@ class ROSGui(QWidget):
         super().__init__()
         self.ros_interface = ROSInterface(self)
         self.setWindowTitle("Multi-Robot Demo")
-        self.setGeometry(100, 100, 1200, 600)  # Increased width
+        self.setGeometry(100, 100, 3200, 2500)  # Increased width
         
         self.workspace_name = "catkin_ws_recker"
         main_layout = QHBoxLayout()
@@ -125,8 +125,10 @@ class ROSGui(QWidget):
         self.btn_update_poses = QPushButton("Update Poses")
         self.btn_update_poses.clicked.connect(self.ros_interface.update_poses)
         
-        main_layout.addWidget(self.btn_save_poses)
-        main_layout.addWidget(self.btn_update_poses)
+        pose_button_layout = QVBoxLayout()
+        pose_button_layout.addWidget(self.btn_save_poses)
+        pose_button_layout.addWidget(self.btn_update_poses)
+        main_layout.addLayout(pose_button_layout)
         
         self.setLayout(main_layout)
 
