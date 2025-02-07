@@ -1,5 +1,5 @@
 import threading
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QTableWidget, QCheckBox, QTableWidgetItem
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QTableWidget, QCheckBox, QTableWidgetItem, QGroupBox
 from PyQt5.QtCore import QTimer, Qt
 from ros_interface import start_status_update, open_rviz, run_compute_object_center, launch_drivers, quit_drivers, zero_ft_sensors, turn_on_wrench_controllers, turn_on_arm_controllers, turn_on_twist_controllers, enable_all_urs, update_ur_relative_to_object, launch_ros, move_to_initial_pose, turn_on_coop_admittance_controller
 from relative_poses import RelativePoses
@@ -10,7 +10,7 @@ class ROSGui(QWidget):
         super().__init__()
         self.ros_interface = ROSInterface(self)
         self.setWindowTitle("Multi-Robot Demo")
-        self.setGeometry(100, 100, 800, 500)
+        self.setGeometry(100, 100, 1200, 600)  # Increased width
         
         self.workspace_name = "catkin_ws_recker"
         main_layout = QHBoxLayout()
@@ -22,10 +22,10 @@ class ROSGui(QWidget):
         self.status_label.setStyleSheet("border: 1px solid black; padding: 5px;")
         left_layout.addWidget(self.status_label)
 
-        # Layout for robot checkboxes and UR checkboxes side by side
-        robot_ur_layout = QHBoxLayout()
+        # Robot and UR selection
+        selection_group = QGroupBox("Robot and UR Selection")
+        selection_layout = QHBoxLayout()
 
-        # Left column: Robot checkboxes
         robot_layout = QVBoxLayout()
         self.robots = {
             "mur620a": QCheckBox("mur620a"),
@@ -36,7 +36,6 @@ class ROSGui(QWidget):
         for checkbox in self.robots.values():
             robot_layout.addWidget(checkbox)
 
-        # Right column: UR checkboxes
         ur_layout = QVBoxLayout()
         ur_layout.addWidget(QLabel("Select URs:"))
         self.ur10_l = QCheckBox("UR10_l")
@@ -46,45 +45,66 @@ class ROSGui(QWidget):
         ur_layout.addWidget(self.ur10_l)
         ur_layout.addWidget(self.ur10_r)
 
-        robot_ur_layout.addLayout(robot_layout)
-        robot_ur_layout.addLayout(ur_layout)
-        left_layout.addLayout(robot_ur_layout)
-
+        selection_layout.addLayout(robot_layout)
+        selection_layout.addLayout(ur_layout)
+        selection_group.setLayout(selection_layout)
+        left_layout.addWidget(selection_group)
+        
         self.check_set_reference = QCheckBox("Set reference at runtime")
-        self.check_set_reference.setChecked(True)  # Standardmäßig aktiviert
-
+        self.check_set_reference.setChecked(True)
+        left_layout.addWidget(self.check_set_reference)
         
-        # Timer for status updates
-        self.status_timer = QTimer()
-        self.status_timer.timeout.connect(lambda: start_status_update(self))
-        self.status_timer.start(30000)
-        
-        # Buttons for ROS Actions
-        buttons = {
+        # Setup Functions Group
+        setup_group = QGroupBox("Setup Functions")
+        setup_layout = QVBoxLayout()
+        setup_buttons = {
             "Check Status": lambda: start_status_update(self),
+            "Launch Drivers": lambda: launch_drivers(self),
+            "Quit Drivers": lambda: quit_drivers(),
             "Open RVIZ": open_rviz,
             "Start Virtual Leader": lambda: launch_ros(self, "virtual_leader", "virtual_leader.launch"),
             "Start Virtual Object": lambda: launch_ros(self, "virtual_object", "virtual_object.launch"),
+        }
+        for text, function in setup_buttons.items():
+            btn = QPushButton(text)
+            btn.clicked.connect(lambda checked, f=function: f())
+            setup_layout.addWidget(btn)
+        setup_group.setLayout(setup_layout)
+        left_layout.addWidget(setup_group)
+        
+        # Utility Functions Group
+        utility_group = QGroupBox("Utility Functions")
+        utility_layout = QVBoxLayout()
+        utility_buttons = {
             "Compute Object Center": lambda: run_compute_object_center(self),
             "Zero F/T Sensors": lambda: zero_ft_sensors(self),
+            "Enable all URs": lambda: enable_all_urs(self),
+            "Update UR relative to object": lambda: update_ur_relative_to_object(self),
+        }
+        for text, function in utility_buttons.items():
+            btn = QPushButton(text)
+            btn.clicked.connect(lambda checked, f=function: f())
+            utility_layout.addWidget(btn)
+        utility_group.setLayout(utility_layout)
+        left_layout.addWidget(utility_group)
+        
+        # Controller Functions Group
+        controller_group = QGroupBox("Controller Functions")
+        controller_layout = QVBoxLayout()
+        controller_buttons = {
             "Turn on Wrench Controllers": lambda: turn_on_wrench_controllers(self),
             "Turn on Arm Controllers": lambda: turn_on_arm_controllers(self),
             "Turn on Twist Controllers": lambda: turn_on_twist_controllers(self),
-            "Enable all URs": lambda: enable_all_urs(self),
-            "Update UR relative to object": lambda: update_ur_relative_to_object(self),
             "Move to Initial Pose Left": lambda: move_to_initial_pose(self, "UR10_l"),
             "Move to Initial Pose Right": lambda: move_to_initial_pose(self, "UR10_r"),
             "Turn on Admittance Controller": lambda: turn_on_coop_admittance_controller(self),
-            "Launch Drivers": lambda: launch_drivers(self),  # HIER GEÄNDERT!
-            "Quit Drivers": lambda: quit_drivers()
         }
-
-        for text, function in buttons.items():
+        for text, function in controller_buttons.items():
             btn = QPushButton(text)
-            btn.clicked.connect(lambda checked, f=function: f())  # HIER GEÄNDERT!
-            left_layout.addWidget(btn)
-
-        left_layout.addWidget(self.check_set_reference)
+            btn.clicked.connect(lambda checked, f=function: f())
+            controller_layout.addWidget(btn)
+        controller_group.setLayout(controller_layout)
+        left_layout.addWidget(controller_group)
         
         main_layout.addLayout(left_layout)
         
@@ -98,16 +118,15 @@ class ROSGui(QWidget):
         self.load_relative_poses()
         main_layout.addWidget(self.table)
         
-        # Save Button
+        # Save and Update Buttons
         self.btn_save_poses = QPushButton("Save Poses")
         self.btn_save_poses.clicked.connect(lambda: self.save_relative_poses())
-
+        
         self.btn_update_poses = QPushButton("Update Poses")
         self.btn_update_poses.clicked.connect(self.ros_interface.update_poses)
-        main_layout.addWidget(self.btn_update_poses)
-
-
+        
         main_layout.addWidget(self.btn_save_poses)
+        main_layout.addWidget(self.btn_update_poses)
         
         self.setLayout(main_layout)
 
