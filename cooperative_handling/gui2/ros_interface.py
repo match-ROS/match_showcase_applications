@@ -15,11 +15,30 @@ class ROSInterface:
         self.gui = gui
         self.workspace_name = "catkin_ws_recker"
         self.updated_poses = {}
+        self.virtual_object_pose = None
+
 
     def update_poses(self):
         """Startet einen Thread für das Abonnieren der relativen Posen und Speichert in YAML."""
         thread = threading.Thread(target=self.subscribe_to_relative_poses, daemon=True)
         thread.start()
+
+    def get_virtual_object_pose_once(self):
+        """Retrieves the virtual object pose once using wait_for_message."""
+        try:
+            if not rospy.core.is_initialized():
+                rospy.init_node("ros_interface_gui", anonymous=True)
+            data = rospy.wait_for_message("/virtual_object/object_pose", PoseStamped, timeout=5)
+            position = data.pose.position
+            orientation = data.pose.orientation
+            quaternion = [orientation.x, orientation.y, orientation.z, orientation.w]
+            euler_angles = tf_trans.euler_from_quaternion(quaternion)
+            
+            self.virtual_object_pose = [position.x, position.y, position.z, euler_angles[0], euler_angles[1], euler_angles[2]]
+            self.gui.update_virtual_object_pose(self.virtual_object_pose)
+            print("Successfully retrieved virtual object pose.")
+        except rospy.ROSException:
+            print("Failed to retrieve virtual object pose within timeout.")
 
     def subscribe_to_relative_poses(self):
         """Abonniert die relativen Posen der ausgewählten Roboter und speichert sie in YAML."""
@@ -30,7 +49,8 @@ class ROSInterface:
             print("No robots or URs selected. Skipping update.")
             return
 
-        rospy.init_node("update_relative_poses", anonymous=True, disable_signals=True)
+        if not rospy.core.is_initialized():
+            rospy.init_node("update_relative_poses", anonymous=True, disable_signals=True)
         self.updated_poses = {}
 
         def callback(data, robot_ur):

@@ -115,6 +115,9 @@ class ROSGui(QWidget):
             "mur620c/UR10_l", "mur620c/UR10_r", "mur620d/UR10_l", "mur620d/UR10_r"
         ])
         self.load_relative_poses()
+        self.virtual_object_row = self.table.rowCount()
+        self.table.insertRow(self.virtual_object_row)
+        self.table.setVerticalHeaderItem(self.virtual_object_row, QTableWidgetItem("Virtual Object"))
         main_layout.addWidget(self.table)
         
         # Save and Update Buttons
@@ -123,6 +126,10 @@ class ROSGui(QWidget):
         
         self.btn_update_poses = QPushButton("Update Poses")
         self.btn_update_poses.clicked.connect(self.ros_interface.update_poses)
+        # Add button to manually get virtual object pose
+        self.btn_get_virtual_object_pose = QPushButton("Get Virtual Object Pose")
+        self.btn_get_virtual_object_pose.clicked.connect(self.ros_interface.get_virtual_object_pose_once)
+        
         
         right_layout = QVBoxLayout()
 
@@ -131,6 +138,7 @@ class ROSGui(QWidget):
 
         # Buttons für "Save Poses" und "Update Poses"
         pose_button_layout = QVBoxLayout()
+        pose_button_layout.addWidget(self.btn_get_virtual_object_pose)
         pose_button_layout.addWidget(self.btn_save_poses)
         pose_button_layout.addWidget(self.btn_update_poses)
         right_layout.addLayout(pose_button_layout)
@@ -160,6 +168,11 @@ class ROSGui(QWidget):
         
         self.setLayout(main_layout)
 
+    def update_virtual_object_pose(self, pose):
+        """Updates the GUI table with the latest virtual object pose."""
+        for col in range(6):
+            self.table.setItem(self.virtual_object_row, col, QTableWidgetItem(str(round(pose[col], 4))))
+    
     def get_selected_robots(self):
         return [name for name, checkbox in self.robots.items() if checkbox.isChecked()]
 
