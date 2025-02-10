@@ -86,6 +86,43 @@ class ROSInterface:
         # Enable the "Save Poses" button after the first update
         self.gui.btn_save_poses.setEnabled(True)
 
+    def start_roscore(self):
+        """Starts roscore on the roscore PC."""
+        command = "ssh -t -t roscore 'source ~/.bashrc; source /opt/ros/noetic/setup.bash; roscore; exec bash'"
+        subprocess.Popen(["gnome-terminal", "--", "bash", "-c", f"{command}; exec bash"])
+
+    def start_mocap(self):
+        """Starts the motion capture system on the roscore PC."""
+        command = "ssh -t -t roscore 'source ~/.bashrc; source /opt/ros/noetic/setup.bash; source ~/catkin_ws/devel/setup.bash; roslaunch launch_mocap mocap_launch.launch; exec bash'"
+        subprocess.Popen(["gnome-terminal", "--", "bash", "-c", f"{command}; exec bash"])
+
+    def start_sync(self):
+        """Starts file synchronization between workspace and selected robots."""
+        selected_robots = self.gui.get_selected_robots()
+        
+        for robot in selected_robots:
+            command = f"while inotifywait -r -e modify,create,delete,move ~/{self.workspace_name}/src; do \n" \
+                      f"rsync --delete -avzhe ssh ~/{self.workspace_name}/src rosmatch@{robot}:~/{self.workspace_name}/ \n" \
+                      "done"
+            subprocess.Popen(["gnome-terminal", "--", "bash", "-c", f"{command}; exec bash"]) 
+
+    def update_button_status(self):
+        """Checks if roscore and mocap are running and updates button colors."""
+        roscore_running = self.is_ros_node_running("/rosout")
+        mocap_running = self.is_ros_node_running("/qualisys")
+
+        self.gui.btn_roscore.setStyleSheet("background-color: lightgreen;" if roscore_running else "background-color: lightgray;")
+        self.gui.btn_mocap.setStyleSheet("background-color: lightgreen;" if mocap_running else "background-color: lightgray;")
+
+    def is_ros_node_running(self, node_name):
+        """Checks if a specific ROS node is running by using `rosnode list`."""
+        try:
+            output = subprocess.check_output("rosnode list", shell=True).decode()
+            return node_name in output.split("\n")
+        except subprocess.CalledProcessError:
+            return False
+
+
 
 
 def launch_ros(gui, package, launch_file):

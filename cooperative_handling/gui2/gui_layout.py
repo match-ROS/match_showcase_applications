@@ -1,7 +1,7 @@
 import threading
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QTableWidget, QCheckBox, QTableWidgetItem, QGroupBox
 from PyQt5.QtCore import QTimer, Qt
-from ros_interface import start_status_update, open_rviz, run_compute_object_center, launch_drivers, quit_drivers, zero_ft_sensors, turn_on_wrench_controllers, turn_on_arm_controllers, turn_on_twist_controllers, enable_all_urs, update_ur_relative_to_object, launch_ros, move_to_initial_pose, turn_on_coop_admittance_controller
+from ros_interface import start_status_update, open_rviz, run_compute_object_center, launch_drivers, quit_drivers, zero_ft_sensors, turn_on_wrench_controllers, turn_on_arm_controllers, turn_on_twist_controllers, enable_all_urs, update_ur_relative_to_object, launch_ros, move_to_initial_pose, turn_on_coop_admittance_controller 
 from relative_poses import RelativePoses
 from ros_interface import ROSInterface
 
@@ -14,6 +14,9 @@ class ROSGui(QWidget):
         
         self.workspace_name = "catkin_ws_recker"
         main_layout = QHBoxLayout()
+        self.status_timer = QTimer()
+        self.status_timer.timeout.connect(self.ros_interface.update_button_status)
+        self.status_timer.start(5000)  # Check status every 5 seconds
         
         # Left Side (Status & Buttons)
         left_layout = QVBoxLayout()
@@ -64,10 +67,24 @@ class ROSGui(QWidget):
             "Open RVIZ": open_rviz,
             "Start Virtual Leader": lambda: launch_ros(self, "virtual_leader", "virtual_leader.launch"),
             "Start Virtual Object": lambda: launch_ros(self, "virtual_object", "virtual_object.launch"),
+            "Start Roscore": lambda: self.ros_interface.start_roscore(),
+            "Start Mocap": lambda: self.ros_interface.start_mocap(),
+            "Start Sync": lambda: self.ros_interface.start_sync(),
         }
+
         for text, function in setup_buttons.items():
             btn = QPushButton(text)
+            
+            # Speichert spezielle Buttons für Status-Updates
+            if text == "Start Roscore":
+                self.btn_roscore = btn
+            elif text == "Start Mocap":
+                self.btn_mocap = btn
+            elif text == "Start Sync":
+                self.btn_sync = btn
+
             btn.clicked.connect(lambda checked, f=function: f())
+            btn.setStyleSheet("background-color: lightgray;")  # Standardfarbe
             setup_layout.addWidget(btn)
         setup_group.setLayout(setup_layout)
         left_layout.addWidget(setup_group)
