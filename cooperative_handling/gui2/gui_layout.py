@@ -108,17 +108,14 @@ class ROSGui(QWidget):
         main_layout.addLayout(left_layout)
         
         # Right Side (Table for Relative Poses)
-        self.table = QTableWidget(8, 6)
+        self.table = QTableWidget(9, 6)
         self.table.setHorizontalHeaderLabels(["X", "Y", "Z", "Rx", "Ry", "Rz"])
         self.table.setVerticalHeaderLabels([
             "mur620a/UR10_l", "mur620a/UR10_r", "mur620b/UR10_l", "mur620b/UR10_r", 
-            "mur620c/UR10_l", "mur620c/UR10_r", "mur620d/UR10_l", "mur620d/UR10_r"
+            "mur620c/UR10_l", "mur620c/UR10_r", "mur620d/UR10_l", "mur620d/UR10_r", "Virtual Object"
         ])
         self.load_relative_poses()
         self.virtual_object_row = self.table.rowCount()
-        self.table.insertRow(self.virtual_object_row)
-        self.table.setVerticalHeaderItem(self.virtual_object_row, QTableWidgetItem("Virtual Object"))
-        main_layout.addWidget(self.table)
         
         # Save and Update Buttons
         self.btn_save_poses = QPushButton("Save Poses")
@@ -129,6 +126,9 @@ class ROSGui(QWidget):
         # Add button to manually get virtual object pose
         self.btn_get_virtual_object_pose = QPushButton("Get Virtual Object Pose")
         self.btn_get_virtual_object_pose.clicked.connect(self.ros_interface.get_virtual_object_pose_once)
+        self.btn_move_virtual_object = QPushButton("Move Object to Initial Pose")
+        self.btn_move_virtual_object.clicked.connect(self.ros_interface.move_virtual_object_to_initial_pose)
+        
         
         
         right_layout = QVBoxLayout()
@@ -152,6 +152,7 @@ class ROSGui(QWidget):
             "Turn on Twist Controllers": lambda: turn_on_twist_controllers(self),
             "Move to Initial Pose Left": lambda: move_to_initial_pose(self, "UR10_l"),
             "Move to Initial Pose Right": lambda: move_to_initial_pose(self, "UR10_r"),
+            "Move Object to Initial Pose": lambda: self.ros_interface.move_virtual_object_to_initial_pose(),
             "Turn on Admittance Controller": lambda: turn_on_coop_admittance_controller(self),
         }
 
@@ -221,8 +222,13 @@ class ROSGui(QWidget):
             row_label = self.table.verticalHeaderItem(row).text()
             if row_label in poses:
                 for col in range(self.table.columnCount()):
+                    print(f"Setting {row_label} at {col} to {poses[row_label][col]}")
+                    print("coloncount", self.table.columnCount())
                     value = poses[row_label][col] if col < len(poses[row_label]) else 0.0
                     self.table.setItem(row, col, QTableWidgetItem(str(value)))
+
+                    if row_label == "Virtual Object":
+                        self.ros_interface.virtual_object_pose = poses[row_label]  # Ensure it's loaded properly
 
     def get_relative_pose(self, robot, ur):
         """Retrieves the relative pose [x, y, z] from the table for the given robot and UR arm."""

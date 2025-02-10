@@ -40,6 +40,22 @@ class ROSInterface:
         except rospy.ROSException:
             print("Failed to retrieve virtual object pose within timeout.")
 
+    def move_virtual_object_to_initial_pose(self):
+        """Launches the ROS launch file to move the virtual object to its initial pose."""
+        if self.virtual_object_pose is None or self.virtual_object_pose == [0, 0, 0, 0, 0, 0]:
+            print("No virtual object pose available to move.")
+            return
+        
+        x, y, z, rx, ry, rz = self.virtual_object_pose
+        quaternion = tf_trans.quaternion_from_euler(rx, ry, rz)
+        initial_pose = [x, y, z, quaternion[0], quaternion[1], quaternion[2], quaternion[3]]
+        initial_pose_str = str(initial_pose).replace(" ", "")
+        
+        command = f"roslaunch cooperative_handling move_object_to_initial_pose.launch initial_pose:={initial_pose_str}"
+        print(f"Executing: {command}")
+        subprocess.Popen(command, shell=True)
+
+
     def subscribe_to_relative_poses(self):
         """Abonniert die relativen Posen der ausgewählten Roboter und speichert sie in YAML."""
         selected_robots = self.gui.get_selected_robots()

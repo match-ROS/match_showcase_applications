@@ -15,6 +15,7 @@ class MoveObjectToInitialPose:
         self.Kp_linear = rospy.get_param("~Kp_linear", 0.2)
         self.Kp_angular = rospy.get_param("~Kp_angular", 0.2)
         self.rate = rospy.get_param("~rate", 100)
+        self.threshold = rospy.get_param("~threshold", 0.02)
         pass
 
     def __init__(self):
@@ -26,14 +27,19 @@ class MoveObjectToInitialPose:
 
     def run(self):
         rate = rospy.Rate(self.rate)
-        while not rospy.is_shutdown():
+        current_distance = 10e10
+        while not rospy.is_shutdown() and current_distance > self.threshold:
             # compute the error
             error = self.compute_error()
             # compute the control input
             control_output = self.compute_control_output(error)
             # publish the control input
             self.cmd_publisher.publish(control_output)
+            # compute the distance to the target
+            current_distance = abs(error.linear.x) + abs(error.linear.y) + abs(error.linear.z) + abs(error.angular.x) + abs(error.angular.y) + abs(error.angular.z)
             rate.sleep()
+
+        rospy.signal_shutdown("Object is at the initial pose")
 
     def compute_error(self):
         error = Twist()
@@ -72,7 +78,6 @@ class MoveObjectToInitialPose:
         if abs(control_output.angular.z) > self.max_velocity:
             control_output.angular.z = self.max_velocity if control_output.angular.z > 0 else -self.max_velocity
 
-        print("Control output: ", control_output)
         return control_output
     
 
