@@ -42,6 +42,8 @@ class ROSInterface:
 
     def move_virtual_object_to_initial_pose(self):
         """Launches the ROS launch file to move the virtual object to its initial pose."""
+        self.gui.load_relative_poses()
+
         if self.virtual_object_pose is None or self.virtual_object_pose == [0, 0, 0, 0, 0, 0]:
             print("No virtual object pose available to move.")
             return
@@ -158,6 +160,41 @@ class ROSInterface:
             return node_name in output.split("\n")
         except subprocess.CalledProcessError:
             return False
+        
+    def update_relative_poses_for_admittance_controller(self):
+        """Reads table values and publishes them as PoseStamped messages."""
+        selected_robots = self.gui.get_selected_robots()
+        selected_urs = self.gui.get_selected_urs()
+
+        if not selected_robots or not selected_urs:
+            print("No robots or URs selected. Skipping update.")
+            return
+        
+        if not rospy.core.is_initialized():
+            rospy.init_node("ros_interface_gui", anonymous=True)
+        
+        for robot in selected_robots:
+            for ur in selected_urs:
+                pose = self.gui.get_relative_pose(robot, ur)
+                
+                msg = PoseStamped()
+                msg.header.stamp = rospy.Time.now()
+                msg.header.frame_id = "virtual_object"  # Using virtual_object as frame_id
+                msg.pose.position.x = pose[0]
+                msg.pose.position.y = pose[1]
+                msg.pose.position.z = pose[2]
+                
+                quaternion = tf_trans.quaternion_from_euler(pose[3], pose[4], pose[5])
+                msg.pose.orientation.x = quaternion[0]
+                msg.pose.orientation.y = quaternion[1]
+                msg.pose.orientation.z = quaternion[2]
+                msg.pose.orientation.w = quaternion[3]
+                
+                topic_name = f"/{robot}/{ur}/relative_pose"
+                pub = rospy.Publisher(topic_name, PoseStamped, queue_size=10, latch=True)
+                rospy.sleep(0.1)  # Ensure publisher is registered
+                pub.publish(msg)
+                print(f"Published relative pose to {topic_name}: {msg.pose}")
 
 
 

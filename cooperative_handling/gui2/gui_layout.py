@@ -128,6 +128,7 @@ class ROSGui(QWidget):
         self.btn_get_virtual_object_pose.clicked.connect(self.ros_interface.get_virtual_object_pose_once)
         self.btn_move_virtual_object = QPushButton("Move Object to Initial Pose")
         self.btn_move_virtual_object.clicked.connect(self.ros_interface.move_virtual_object_to_initial_pose)
+
         
         
         
@@ -154,6 +155,7 @@ class ROSGui(QWidget):
             "Move to Initial Pose Right": lambda: move_to_initial_pose(self, "UR10_r"),
             "Move Object to Initial Pose": lambda: self.ros_interface.move_virtual_object_to_initial_pose(),
             "Turn on Admittance Controller": lambda: turn_on_coop_admittance_controller(self),
+            "Update Relative Poses for Admittance Controller": lambda: self.ros_interface.update_relative_poses_for_admittance_controller(),
         }
 
         for text, function in controller_buttons.items():
