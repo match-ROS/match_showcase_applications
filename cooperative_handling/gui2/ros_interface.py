@@ -99,6 +99,7 @@ class ROSInterface:
     def start_sync(self):
         """Starts file synchronization between workspace and selected robots."""
         selected_robots = self.gui.get_selected_robots()
+        self.gui.btn_sync.setStyleSheet("background-color: lightgreen;")  # Mark sync as active
         
         for robot in selected_robots:
             command = f"while inotifywait -r -e modify,create,delete,move ~/{self.workspace_name}/src; do \n" \

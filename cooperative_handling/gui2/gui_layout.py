@@ -104,25 +104,7 @@ class ROSGui(QWidget):
             utility_layout.addWidget(btn)
         utility_group.setLayout(utility_layout)
         left_layout.addWidget(utility_group)
-        
-        # Controller Functions Group
-        controller_group = QGroupBox("Controller Functions")
-        controller_layout = QVBoxLayout()
-        controller_buttons = {
-            "Turn on Wrench Controllers": lambda: turn_on_wrench_controllers(self),
-            "Turn on Arm Controllers": lambda: turn_on_arm_controllers(self),
-            "Turn on Twist Controllers": lambda: turn_on_twist_controllers(self),
-            "Move to Initial Pose Left": lambda: move_to_initial_pose(self, "UR10_l"),
-            "Move to Initial Pose Right": lambda: move_to_initial_pose(self, "UR10_r"),
-            "Turn on Admittance Controller": lambda: turn_on_coop_admittance_controller(self),
-        }
-        for text, function in controller_buttons.items():
-            btn = QPushButton(text)
-            btn.clicked.connect(lambda checked, f=function: f())
-            controller_layout.addWidget(btn)
-        controller_group.setLayout(controller_layout)
-        left_layout.addWidget(controller_group)
-        
+                
         main_layout.addLayout(left_layout)
         
         # Right Side (Table for Relative Poses)
@@ -142,10 +124,39 @@ class ROSGui(QWidget):
         self.btn_update_poses = QPushButton("Update Poses")
         self.btn_update_poses.clicked.connect(self.ros_interface.update_poses)
         
+        right_layout = QVBoxLayout()
+
+        # Füge die bestehende Tabelle hinzu
+        right_layout.addWidget(self.table)
+
+        # Buttons für "Save Poses" und "Update Poses"
         pose_button_layout = QVBoxLayout()
         pose_button_layout.addWidget(self.btn_save_poses)
         pose_button_layout.addWidget(self.btn_update_poses)
-        main_layout.addLayout(pose_button_layout)
+        right_layout.addLayout(pose_button_layout)
+
+        # Erstelle die "Controller Functions" Gruppe und füge sie rechts hinzu
+        controller_group = QGroupBox("Controller Functions")
+        controller_layout = QVBoxLayout()
+        controller_buttons = {
+            "Turn on Wrench Controllers": lambda: turn_on_wrench_controllers(self),
+            "Turn on Arm Controllers": lambda: turn_on_arm_controllers(self),
+            "Turn on Twist Controllers": lambda: turn_on_twist_controllers(self),
+            "Move to Initial Pose Left": lambda: move_to_initial_pose(self, "UR10_l"),
+            "Move to Initial Pose Right": lambda: move_to_initial_pose(self, "UR10_r"),
+            "Turn on Admittance Controller": lambda: turn_on_coop_admittance_controller(self),
+        }
+
+        for text, function in controller_buttons.items():
+            btn = QPushButton(text)
+            btn.clicked.connect(lambda checked, f=function: f())
+            controller_layout.addWidget(btn)
+
+        controller_group.setLayout(controller_layout)
+        right_layout.addWidget(controller_group)
+
+        main_layout.addLayout(right_layout)  # Fügt das Layout auf der rechten Seite hinzu
+
         
         self.setLayout(main_layout)
 
