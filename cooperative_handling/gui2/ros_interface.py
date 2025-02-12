@@ -16,7 +16,16 @@ class ROSInterface:
         self.workspace_name = "catkin_ws_recker"
         self.updated_poses = {}
         self.virtual_object_pose = None
-
+        
+    def launch_lissajous_demo(self, demo_type, velocity):
+        """Launches the Lissajous motion demo with specified velocity."""
+        if velocity < 0.0 or velocity > 5.0:
+            print("Invalid velocity value. Must be between 0.0 and 5.0.")
+            return
+        
+        command = f"roslaunch cooperative_handling {demo_type} velocity:={velocity}"
+        print(f"Executing: {command}")
+        subprocess.Popen(command, shell=True)
 
     def update_poses(self):
         """Startet einen Thread für das Abonnieren der relativen Posen und Speichert in YAML."""
@@ -36,7 +45,7 @@ class ROSInterface:
             
             self.virtual_object_pose = [position.x, position.y, position.z, euler_angles[0], euler_angles[1], euler_angles[2]]
             self.gui.update_virtual_object_pose(self.virtual_object_pose)
-            print("Successfully retrieved virtual object pose.")
+            print("Successfully retrieved virtual object pose.", self.virtual_object_pose)
         except rospy.ROSException:
             print("Failed to retrieve virtual object pose within timeout.")
 
@@ -427,6 +436,7 @@ def turn_on_coop_admittance_controller(gui):
     selected_robots = gui.get_selected_robots()
     selected_urs = gui.get_selected_urs()
     set_reference = "true" if gui.check_set_reference.isChecked() else "false"
+    print("Set reference at runtime:", set_reference)
 
     if not selected_robots or not selected_urs:
         print("No robots or URs selected. Skipping launch.")

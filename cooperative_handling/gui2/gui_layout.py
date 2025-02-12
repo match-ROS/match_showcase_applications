@@ -1,5 +1,5 @@
 import threading
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QTableWidget, QCheckBox, QTableWidgetItem, QGroupBox
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QTableWidget, QCheckBox, QTableWidgetItem, QGroupBox, QTabWidget, QDoubleSpinBox
 from PyQt5.QtCore import QTimer, Qt
 from ros_interface import start_status_update, open_rviz, run_compute_object_center, launch_drivers, quit_drivers, zero_ft_sensors, turn_on_wrench_controllers, turn_on_arm_controllers, turn_on_twist_controllers, enable_all_urs, update_ur_relative_to_object, launch_ros, move_to_initial_pose, turn_on_coop_admittance_controller 
 from relative_poses import RelativePoses
@@ -115,7 +115,6 @@ class ROSGui(QWidget):
             "mur620c/UR10_l", "mur620c/UR10_r", "mur620d/UR10_l", "mur620d/UR10_r", "Virtual Object"
         ])
         self.load_relative_poses()
-        self.virtual_object_row = self.table.rowCount()
         
         # Save and Update Buttons
         self.btn_save_poses = QPushButton("Save Poses")
@@ -164,17 +163,51 @@ class ROSGui(QWidget):
             controller_layout.addWidget(btn)
 
         controller_group.setLayout(controller_layout)
+        
+        # Motion Demos GroupBox
+        motion_demos_group = QGroupBox("Motion Demos")
+        self.motion_demos_layout = QVBoxLayout()
+        
+        # Add Lissajous Controls
+        self.add_lissajous_controls("Lissajous 3D Position", "lissajous_3D_position_publisher.launch")
+        self.add_lissajous_controls("Lissajous 3D Orientation", "lissajous_3D_orientation_publisher.launch")
+        self.add_lissajous_controls("Lissajous 6D Combined", "lissajous_6D_combined_publisher.launch")
+
+        motion_demos_group.setLayout(self.motion_demos_layout)
+        
+
         right_layout.addWidget(controller_group)
+        right_layout.addWidget(motion_demos_group)
 
         main_layout.addLayout(right_layout)  # Fügt das Layout auf der rechten Seite hinzu
 
-        
         self.setLayout(main_layout)
+
+    
+    def add_lissajous_controls(self, label_text, launch_file):
+        """Adds a labeled button with a velocity input box."""
+        hbox = QHBoxLayout()
+        label = QLabel(label_text)
+        velocity_input = QDoubleSpinBox()
+        velocity_input.setRange(0.0, 5.0)
+        velocity_input.setSingleStep(0.1)
+        velocity_input.setValue(1.0)
+        button = QPushButton(label_text)
+        
+        button.clicked.connect(lambda: self.ros_interface.launch_lissajous_demo(launch_file, velocity_input.value()))
+        
+        #hbox.addWidget(label)
+        hbox.addWidget(velocity_input)
+        hbox.addWidget(button)
+        self.motion_demos_layout.addLayout(hbox)
+
+
+
 
     def update_virtual_object_pose(self, pose):
         """Updates the GUI table with the latest virtual object pose."""
         for col in range(6):
-            self.table.setItem(self.virtual_object_row, col, QTableWidgetItem(str(round(pose[col], 4))))
+            self.table.setItem(8, col, QTableWidgetItem(str(round(pose[col], 4))))
     
     def get_selected_robots(self):
         return [name for name, checkbox in self.robots.items() if checkbox.isChecked()]
