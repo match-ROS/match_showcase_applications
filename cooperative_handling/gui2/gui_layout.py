@@ -1,5 +1,5 @@
 import threading
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QTableWidget, QCheckBox, QTableWidgetItem, QGroupBox, QTabWidget, QDoubleSpinBox
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QTableWidget, QCheckBox, QTableWidgetItem, QGroupBox, QTabWidget, QDoubleSpinBox, QTextEdit
 from PyQt5.QtCore import QTimer, Qt
 from ros_interface import start_status_update, open_rviz, run_compute_object_center, launch_drivers, quit_drivers, zero_ft_sensors, turn_on_wrench_controllers, turn_on_arm_controllers, turn_on_twist_controllers, enable_all_urs, update_ur_relative_to_object, launch_ros, move_to_initial_pose, turn_on_coop_admittance_controller 
 from relative_poses import RelativePoses
@@ -172,6 +172,11 @@ class ROSGui(QWidget):
         self.add_lissajous_controls("Lissajous 3D Position", "lissajous_3D_position_publisher.launch")
         self.add_lissajous_controls("Lissajous 3D Orientation", "lissajous_3D_orientation_publisher.launch")
         self.add_lissajous_controls("Lissajous 6D Combined", "lissajous_6D_combined_publisher.launch")
+
+        btn_lissajous_stop = QPushButton("Stop Lissajous Motion")
+        btn_lissajous_stop.clicked.connect(lambda: self.ros_interface.stop_lissajous_motion())
+        self.motion_demos_layout.addWidget(btn_lissajous_stop)
+
 
         motion_demos_group.setLayout(self.motion_demos_layout)
         

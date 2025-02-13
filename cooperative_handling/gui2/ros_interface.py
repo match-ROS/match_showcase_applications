@@ -6,6 +6,7 @@ from geometry_msgs.msg import PoseStamped
 from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtCore import QTimer
 import tf.transformations as tf_trans
+from rosgraph_msgs.msg import Log
 
 import rospy
 from geometry_msgs.msg import PoseStamped
@@ -205,6 +206,11 @@ class ROSInterface:
                 pub.publish(msg)
                 print(f"Published relative pose to {topic_name}: {msg.pose}")
 
+    def stop_lissajous_motion(self):
+        """Stops any running Lissajous motion by killing the process."""
+        command = "pkill -f lissajous_"
+        print(f"Stopping Lissajous motion with command: {command}")
+        subprocess.Popen(command, shell=True)
 
 
 

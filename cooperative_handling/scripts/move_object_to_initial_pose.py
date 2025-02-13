@@ -39,6 +39,8 @@ class MoveObjectToInitialPose:
             current_distance = abs(error.linear.x) + abs(error.linear.y) + abs(error.linear.z) + abs(error.angular.x) + abs(error.angular.y) + abs(error.angular.z)
             rate.sleep()
 
+        self.cmd_publisher.publish(Twist())
+        rospy.sleep(0.1)
         rospy.signal_shutdown("Object is at the initial pose")
 
     def compute_error(self):
@@ -60,8 +62,8 @@ class MoveObjectToInitialPose:
         control_output.linear.x = self.Kp_linear * error.linear.x
         control_output.linear.y = self.Kp_linear * error.linear.y
         control_output.linear.z = self.Kp_linear * error.linear.z
-        control_output.angular.x = self.Kp_angular * error.angular.x
-        control_output.angular.y = self.Kp_angular * error.angular.y
+        control_output.angular.x = -self.Kp_angular * error.angular.x
+        control_output.angular.y = -self.Kp_angular * error.angular.y
         control_output.angular.z = self.Kp_angular * error.angular.z
 
         # limit the control input
