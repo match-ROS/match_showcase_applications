@@ -305,14 +305,9 @@ def quit_drivers():
     print("Stopping all drivers...")
     subprocess.Popen("pkill -f 'roslaunch'", shell=True)
 
-def move_to_initial_pose(gui, UR_prefix):
-    selected_robots = gui.get_selected_robots()
-    move_group_name = "UR_arm_l" if UR_prefix == "UR10_l" else "UR_arm_r"
-    for robot in selected_robots:
-        home_position = "handling_position_wide" if robot in ["mur620a", "mur620b"] else "handling_position_wide_lift"
-        command = f"ROS_NAMESPACE={robot} roslaunch ur_utilities move_UR_to_home_pose.launch tf_prefix:={robot} UR_prefix:={UR_prefix} home_position:={home_position} move_group_name:={move_group_name}"
-        print(f"Executing: {command}")
-        subprocess.Popen(command, shell=True)
+
+
+
 
 
 def turn_on_wrench_controllers(gui):
@@ -417,7 +412,6 @@ def quit_drivers(gui):
     except Exception as e:
         print(f"Error stopping processes: {e}")
 
-
 def move_to_initial_pose(gui, UR_prefix):
     """Moves the selected robots to the initial pose with the correct namespace and move_group_name."""
     selected_robots = gui.get_selected_robots()
@@ -426,10 +420,12 @@ def move_to_initial_pose(gui, UR_prefix):
     move_group_name = "UR_arm_l" if UR_prefix == "UR10_l" else "UR_arm_r"
 
     for robot in selected_robots:
-        # Set home_position based on robot name
-        if robot in ["mur620a", "mur620b"]:
+        # Special case for mur620c with UR10_r
+        if robot == "mur620c" and UR_prefix == "UR10_r":
+            home_position = "handling_position_wide_lift_mur620c"
+        elif robot in ["mur620a", "mur620b"]:
             home_position = "handling_position_wide"
-        else:  # mur620c, mur620d
+        else:  # Default case for mur620c, mur620d
             home_position = "handling_position_wide_lift"
 
         # ROS launch command with namespace
