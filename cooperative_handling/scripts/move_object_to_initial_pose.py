@@ -62,8 +62,8 @@ class MoveObjectToInitialPose:
         control_output.linear.x = self.Kp_linear * error.linear.x
         control_output.linear.y = self.Kp_linear * error.linear.y
         control_output.linear.z = self.Kp_linear * error.linear.z
-        control_output.angular.x = -self.Kp_angular * error.angular.x
-        control_output.angular.y = -self.Kp_angular * error.angular.y
+        control_output.angular.x = self.Kp_angular * error.angular.x
+        control_output.angular.y = self.Kp_angular * error.angular.y
         control_output.angular.z = self.Kp_angular * error.angular.z
 
         # limit the control input
