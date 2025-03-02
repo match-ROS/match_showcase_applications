@@ -5,6 +5,7 @@
 import rospy
 from geometry_msgs.msg import Twist, PoseStamped, Pose
 from tf import transformations
+from math import pi
 
 class MoveObjectToInitialPose:
     def config(self):
@@ -51,6 +52,18 @@ class MoveObjectToInitialPose:
         q_error = transformations.quaternion_multiply([self.initial_pose[3], self.initial_pose[4], self.initial_pose[5], self.initial_pose[6]], transformations.quaternion_inverse([self.current_pose.orientation.x, self.current_pose.orientation.y, self.current_pose.orientation.z, self.current_pose.orientation.w]) )
          #transformations.quaternion_multiply([self.current_pose.orientation.x, self.current_pose.orientation.y, self.current_pose.orientation.z, self.current_pose.orientation.w], transformations.quaternion_inverse(self.initial_pose[3:]))
         euler_error = transformations.euler_from_quaternion(q_error)
+
+        for i in range(3):
+            if euler_error[i] > pi:
+                euler_error[i] -= 2*pi
+            elif euler_error[i] < -pi:
+                euler_error[i] += 2*pi
+            
+            if euler_error[i] > pi/2:
+                euler_error[i] -= pi
+            elif euler_error[i] < -pi/2:
+                euler_error[i] += pi
+
         error.angular.x = euler_error[0]
         error.angular.y = euler_error[1]
         error.angular.z = euler_error[2]
