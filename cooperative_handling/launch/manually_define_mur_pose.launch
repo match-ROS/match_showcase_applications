@@ -3,30 +3,34 @@
     <arg name="mur620a_pose" default="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]" />
     <arg name="mur620b_pose" default="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]" />
     <arg name="mur620c_pose" default="[1.49, 0.0, 0.0, 3.1415, 0.0, 0.0]" />
+    <arg name="mur620c_pose_tf" default= "1.49 0.0 0.0 3.1415 0.0 0.0" />
     <arg name="mur620d_pose" default="[-1.49, 0.0, 0.0, 0.0, 0.0, 0.0]" />
+    <arg name="mur620d_pose_tf" default="-1.49 0.0 0.0 0.0 0.0 0.0" />
+
+
 
     <!-- run static tf publisher for the MURs -->
     <node pkg="tf" type="static_transform_publisher" name="mur620a_tf_publisher" args="$(arg mur620a_pose) map mur620a/base_footprint 1" />
     <node pkg="tf" type="static_transform_publisher" name="mur620b_tf_publisher" args="$(arg mur620b_pose) map mur620b/base_footprint 1" />
-    <node pkg="tf" type="static_transform_publisher" name="mur620c_tf_publisher" args="$(arg mur620c_pose) map mur620c/base_footprint 1" />
-    <node pkg="tf" type="static_transform_publisher" name="mur620d_tf_publisher" args="$(arg mur620d_pose) map mur620d/base_footprint 1" />
+    <node pkg="tf" type="static_transform_publisher" name="mur620c_tf_publisher" args="$(arg mur620c_pose_tf) map mur620c/base_footprint 1" />
+    <node pkg="tf" type="static_transform_publisher" name="mur620d_tf_publisher" args="$(arg mur620d_pose_tf) map mur620d/base_footprint 1" />
 
-    <node pkg="cooperative_handling" type="fake_mir_pose_simple_pub.py" name="fake_mir_pose_simple_pub" output="screen" >
+    <node pkg="cooperative_handling" type="fake_mir_pose_simple_pub.py" name="fake_mir_pose_simple_pub_a" output="screen" >
         <param name="mir_name" value="mur620a" />
         <rosparam param="fake_pose" subst_value="True">$(arg mur620a_pose) </rosparam>
     </node>
 
-    <node pkg="cooperative_handling" type="fake_mir_pose_simple_pub.py" name="fake_mir_pose_simple_pub" output="screen" >
+    <node pkg="cooperative_handling" type="fake_mir_pose_simple_pub.py" name="fake_mir_pose_simple_pub_b" output="screen" >
         <param name="mir_name" value="mur620b" />
         <rosparam param="fake_pose" subst_value="True">$(arg mur620b_pose) </rosparam>
     </node>
 
-    <node pkg="cooperative_handling" type="fake_mir_pose_simple_pub.py" name="fake_mir_pose_simple_pub" output="screen" >
+    <node pkg="cooperative_handling" type="fake_mir_pose_simple_pub.py" name="fake_mir_pose_simple_pub_c" output="screen" >
         <param name="mir_name" value="mur620c" />
         <rosparam param="fake_pose" subst_value="True">$(arg mur620c_pose) </rosparam>
     </node> 
 
-    <node pkg="cooperative_handling" type="fake_mir_pose_simple_pub.py" name="fake_mir_pose_simple_pub" output="screen" >
+    <node pkg="cooperative_handling" type="fake_mir_pose_simple_pub.py" name="fake_mir_pose_simple_pub_d" output="screen" >
         <param name="mir_name" value="mur620d" />
         <rosparam param="fake_pose" subst_value="True">$(arg mur620d_pose) </rosparam>
     </node>
