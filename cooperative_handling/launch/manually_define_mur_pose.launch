@@ -2,10 +2,10 @@
     <!-- Argument für die Liste der Roboter -->
     <arg name="mur620a_pose" default="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]" />
     <arg name="mur620b_pose" default="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]" />
-    <arg name="mur620c_pose" default="[1.49, 0.0, 0.0, 3.1415, 0.0, 0.0]" />
-    <arg name="mur620c_pose_tf" default= "1.49 0.0 0.0 3.1415 0.0 0.0" />
-    <arg name="mur620d_pose" default="[-1.49, 0.0, 0.0, 0.0, 0.0, 0.0]" />
-    <arg name="mur620d_pose_tf" default="-1.49 0.0 0.0 0.0 0.0 0.0" />
+    <arg name="mur620c_pose" default="[3.51, 2.0, 0.0, 0.0, 0.0, 0.0]" />
+    <arg name="mur620c_pose_tf" default= "3.51 2.0 0.0 0.0 0.0 0.0" />
+    <arg name="mur620d_pose" default="[6.49, 2.0, 0.0, 3.1415, 0.0, 0.0]" />
+    <arg name="mur620d_pose_tf" default="6.49 2.0 0.0 3.1415 0.0 0.0" />
 
 
 
