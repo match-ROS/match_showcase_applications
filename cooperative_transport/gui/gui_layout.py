@@ -1,7 +1,6 @@
 import threading
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QTableWidget, QCheckBox, QTableWidgetItem, QGroupBox, QTabWidget, QDoubleSpinBox, QTextEdit
 from PyQt5.QtCore import QTimer, Qt
-from ros_interface import start_status_update, open_rviz, run_compute_object_center, launch_drivers, quit_drivers, zero_ft_sensors, turn_on_twist_controllers, launch_ros, move_to_initial_pose
 from relative_poses import RelativePoses
 from ros_interface import ROSInterface
 
@@ -42,12 +41,9 @@ class ROSGui(QWidget):
         setup_group = QGroupBox("Setup Functions")
         setup_layout = QVBoxLayout()
         setup_buttons = {
-            "Check Status": lambda: start_status_update(self),
-            "Launch Drivers": lambda: launch_drivers(self),
-            "Quit Drivers": lambda: quit_drivers(),
-            "Open RVIZ": open_rviz,
-            "Start Virtual Leader": lambda: launch_ros(self, "virtual_leader", "virtual_leader.launch"),
-            "Start Virtual Object": lambda: launch_ros(self, "virtual_object", "virtual_object.launch"),
+            "Launch Drivers": lambda: self.ros_interface.launch_drivers(),
+            "Open RVIZ": lambda: self.ros_interface.open_rviz(),
+            "Start Virtual Leader": lambda: self.ros_interface.launch_ros("virtual_leader", "virtual_leader.launch"),
             "Start Roscore": lambda: self.ros_interface.start_roscore(),
             "Start Mocap": lambda: self.ros_interface.start_mocap(),
             "Start Sync": lambda: self.ros_interface.start_sync(),
@@ -55,8 +51,17 @@ class ROSGui(QWidget):
 
         for text, function in setup_buttons.items():
             btn = QPushButton(text)
+            
+            # Speichert spezielle Buttons für Status-Updates
+            if text == "Start Roscore":
+                self.btn_roscore = btn
+            elif text == "Start Mocap":
+                self.btn_mocap = btn
+            elif text == "Start Sync":
+                self.btn_sync = btn
+
             btn.clicked.connect(lambda checked, f=function: f())
-            btn.setStyleSheet("background-color: lightgray;")
+            btn.setStyleSheet("background-color: lightgray;")  # Standardfarbe
             setup_layout.addWidget(btn)
         setup_group.setLayout(setup_layout)
         left_layout.addWidget(setup_group)
@@ -84,6 +89,7 @@ class ROSGui(QWidget):
         controller_buttons = {
             "Turn on Twist Controllers": lambda: turn_on_twist_controllers(self),
             "Move Object to Initial Pose": lambda: self.ros_interface.move_virtual_object_to_initial_pose(),
+            "Move MiR to Start Pose": lambda: self.ros_interface.move_mir_to_start_pose(),
         }
 
         for text, function in controller_buttons.items():

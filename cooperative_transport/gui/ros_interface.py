@@ -108,3 +108,48 @@ class ROSInterface:
             return node_name in output.split("\n")
         except subprocess.CalledProcessError:
             return False
+
+    def open_rviz(self):
+        command = "roslaunch cooperative_handling launch_rviz.launch"
+        subprocess.Popen(command, shell=True)
+
+    def launch_ros(self, package, launch_file):
+        selected_robots = self.gui.get_selected_robots()
+        robot_names_str = "[" + ",".join(f"'{r}'" for r in selected_robots) + "]"
+
+        command = f"roslaunch {package} {launch_file} robot_names:={robot_names_str}"
+        print(f"Executing: {command}")
+        subprocess.Popen(command, shell=True)
+
+    def start_sync(self):
+        """Starts file synchronization between workspace and selected robots."""
+        selected_robots = self.gui.get_selected_robots()
+        self.gui.btn_sync.setStyleSheet("background-color: lightgreen;")  # Mark sync as active
+        
+        for robot in selected_robots:
+            command = f"while inotifywait -r -e modify,create,delete,move ~/{self.workspace_name}/src; do \n" \
+                      f"rsync --delete -avzhe ssh ~/{self.workspace_name}/src rosmatch@{robot}:~/{self.workspace_name}/ \n" \
+                      "done"
+            subprocess.Popen(["gnome-terminal", "--", "bash", "-c", f"{command}; exec bash"]) 
+
+
+    def move_to_initial_pose(self):
+        """Moves the selected robots to the initial pose with the correct namespace and move_group_name."""
+        selected_robots = gui.get_selected_robots()
+
+        # Set move_group_name based on UR_prefix
+        move_group_name = "UR_arm_l" if UR_prefix == "UR10_l" else "UR_arm_r"
+
+        for robot in selected_robots:
+            # Special case for mur620c with UR10_r
+            if robot == "mur620c" and UR_prefix == "UR10_r":
+                home_position = "handling_position_wide_lift_mur620c"
+            elif robot in ["mur620a", "mur620b"]:
+                home_position = "handling_position_wide"
+            else:  # Default case for mur620c, mur620d
+                home_position = "handling_position_wide_lift"
+
+            # ROS launch command with namespace
+            command = f"ROS_NAMESPACE={robot} roslaunch ur_utilities move_UR_to_home_pose.launch tf_prefix:={robot} UR_prefix:={UR_prefix} home_position:={home_position} move_group_name:={move_group_name}"
+            print(f"Executing: {command}")
+            subprocess.Popen(command, shell=True)
