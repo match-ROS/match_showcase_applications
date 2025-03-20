@@ -1,5 +1,5 @@
 <launch>
     
-    <node type="main.py" name="gui" pkg="cooperative_handling" /> 
+    <node type="main.py" name="gui" pkg="cooperative_handling" output="screen"/> 
 
   </launch>

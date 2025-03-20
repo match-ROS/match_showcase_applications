@@ -133,23 +133,46 @@ class ROSInterface:
             subprocess.Popen(["gnome-terminal", "--", "bash", "-c", f"{command}; exec bash"]) 
 
 
-    def move_to_initial_pose(self):
-        """Moves the selected robots to the initial pose with the correct namespace and move_group_name."""
-        selected_robots = gui.get_selected_robots()
+    def move_mir_to_start_pose(self):
+        """Moves each selected robot to its initial pose via 'roslaunch cooperative_transport move_mir_to_start_pose.launch'.\n        The absolute pose is computed from the Virtual Object pose plus the relative offset from the table."""
+        selected_robots = self.gui.get_selected_robots()
+        # We need the table values for 'Virtual Object' as the reference
+        self.gui.load_relative_poses()  # Ensure table is updated
 
-        # Set move_group_name based on UR_prefix
-        move_group_name = "UR_arm_l" if UR_prefix == "UR10_l" else "UR_arm_r"
+        # Grab the Virtual Object pose from the table
+        vo_row = self.gui.table.rowCount() - 1  # last row is "Virtual Object"
+        vo_x = float(self.gui.table.item(vo_row, 0).text()) if self.gui.table.item(vo_row, 0) else 0.0
+        vo_y = float(self.gui.table.item(vo_row, 1).text()) if self.gui.table.item(vo_row, 1) else 0.0
+        vo_yaw = float(self.gui.table.item(vo_row, 2).text()) if self.gui.table.item(vo_row, 2) else 0.0
 
         for robot in selected_robots:
-            # Special case for mur620c with UR10_r
-            if robot == "mur620c" and UR_prefix == "UR10_r":
-                home_position = "handling_position_wide_lift_mur620c"
-            elif robot in ["mur620a", "mur620b"]:
-                home_position = "handling_position_wide"
-            else:  # Default case for mur620c, mur620d
-                home_position = "handling_position_wide_lift"
+            # find the row for this robot in the table
+            row_index = None
+            for row in range(self.gui.table.rowCount()):
+                row_label = self.gui.table.verticalHeaderItem(row).text()
+                if row_label == robot:
+                    row_index = row
+                    break
+            if row_index is None:
+                print(f"No table entry for {robot}")
+                continue
 
-            # ROS launch command with namespace
-            command = f"ROS_NAMESPACE={robot} roslaunch ur_utilities move_UR_to_home_pose.launch tf_prefix:={robot} UR_prefix:={UR_prefix} home_position:={home_position} move_group_name:={move_group_name}"
-            print(f"Executing: {command}")
-            subprocess.Popen(command, shell=True)
+            rel_x = float(self.gui.table.item(row_index, 0).text()) if self.gui.table.item(row_index, 0) else 0.0
+            rel_y = float(self.gui.table.item(row_index, 1).text()) if self.gui.table.item(row_index, 1) else 0.0
+            rel_yaw = float(self.gui.table.item(row_index, 2).text()) if self.gui.table.item(row_index, 2) else 0.0
+
+            # Compute absolute pose
+            abs_x = vo_x + rel_x
+            abs_y = vo_y + rel_y
+            abs_yaw = vo_yaw + rel_yaw
+
+            target_pose_str = f"[{abs_x},{abs_y},{abs_yaw}]"
+            tf_prefix = robot
+
+            command = f"roslaunch cooperative_transport move_mir_to_start_pose.launch tf_prefix:={tf_prefix} target_pose:={target_pose_str}"
+            print(f"Moving {robot} to initial pose: {command}")
+            #subprocess.Popen(command, shell=True)
+            subprocess.Popen([
+                "gnome-terminal", "--", "bash", "-c",
+                f"{command}; exec bash"
+            ])

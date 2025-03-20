@@ -95,6 +95,7 @@ class ROSGui(QWidget):
         for text, function in controller_buttons.items():
             btn = QPushButton(text)
             btn.clicked.connect(lambda checked, f=function: f())
+            btn.setStyleSheet("background-color: lightgray;")  # Standardfarbe
             controller_layout.addWidget(btn)
         
         controller_group.setLayout(controller_layout)
