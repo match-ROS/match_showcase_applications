@@ -1,25 +1,28 @@
-import csv
-import os
-from PyQt5.QtWidgets import QTableWidgetItem
+import yaml
+import os, sys
 
-CSV_FILE = "relative_poses.csv"
+class RelativePoses:
+    def __init__(self, filename="poses.yaml"):
+        # get script folder
+        script_dir = os.path.dirname(__file__)
+        abs_file_path = os.path.join(script_dir, filename)
+        self.filename = abs_file_path
+        
+        #self.filename = filename
 
-def save_relative_poses(table):
-    """Saves the current values from the table to a CSV file."""
-    with open(CSV_FILE, "w", newline="") as file:
-        writer = csv.writer(file)
-        for row in range(8):
-            writer.writerow([table.item(row, col).text() if table.item(row, col) else "0.0" for col in range(3)])
+    def load_poses(self):
+        """Loads relative poses from a YAML file."""
+        try:
+            with open(self.filename, "r") as file:
+                return yaml.safe_load(file)
+        except Exception as e:
+            print(f"Error loading poses: {e}")
+            return {}
 
-def load_relative_poses(table):
-    """Loads relative poses from the CSV file if it exists."""
-    if os.path.exists(CSV_FILE):
-        with open(CSV_FILE, "r") as file:
-            reader = csv.reader(file)
-            for row_idx, row in enumerate(reader):
-                for col_idx, value in enumerate(row):
-                    table.setItem(row_idx, col_idx, QTableWidgetItem(value))
-    else:
-        for row in range(8):
-            for col in range(3):
-                table.setItem(row, col, QTableWidgetItem("0.0"))
+    def save_poses(self, poses):
+        """Saves relative poses to a YAML file."""
+        try:
+            with open(self.filename, "w") as file:
+                yaml.safe_dump(poses, file)
+        except Exception as e:
+            print(f"Error saving poses: {e}")
