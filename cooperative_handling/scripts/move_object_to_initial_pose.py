@@ -12,7 +12,7 @@ class MoveObjectToInitialPose:
         self.initial_pose = rospy.get_param("~initial_pose", [32.75554365624321, 34.8168224604003 - 0.07, 1.05, 0, 0, 0, 1])
         self.currecnt_pose_topic = rospy.get_param("~current_pose_topic", "/virtual_object/object_pose")
         self.cmd_vel_topic = rospy.get_param("~cmd_vel_topic", "/virtual_object/object_cmd_vel")
-        self.max_velocity = rospy.get_param("~velocity", 0.05)
+        self.max_velocity = rospy.get_param("~velocity", 0.1)
         self.Kp_linear = rospy.get_param("~Kp_linear", 0.2)
         self.Kp_angular = rospy.get_param("~Kp_angular", 0.2)
         self.rate = rospy.get_param("~rate", 100)
@@ -53,16 +53,16 @@ class MoveObjectToInitialPose:
          #transformations.quaternion_multiply([self.current_pose.orientation.x, self.current_pose.orientation.y, self.current_pose.orientation.z, self.current_pose.orientation.w], transformations.quaternion_inverse(self.initial_pose[3:]))
         euler_error = transformations.euler_from_quaternion(q_error)
 
-        for i in range(3):
-            if euler_error[i] > pi:
-                euler_error[i] -= 2*pi
-            elif euler_error[i] < -pi:
-                euler_error[i] += 2*pi
+        # for i in range(3):
+        #     if euler_error[i] > pi:
+        #         euler_error[i] -= 2*pi
+        #     elif euler_error[i] < -pi:
+        #         euler_error[i] += 2*pi
             
-            if euler_error[i] > pi/2:
-                euler_error[i] -= pi
-            elif euler_error[i] < -pi/2:
-                euler_error[i] += pi
+        #     if euler_error[i] > pi/2:
+        #         euler_error[i] -= pi
+        #     elif euler_error[i] < -pi/2:
+        #         euler_error[i] += pi
 
         error.angular.x = euler_error[0]
         error.angular.y = euler_error[1]
@@ -75,8 +75,8 @@ class MoveObjectToInitialPose:
         control_output.linear.x = self.Kp_linear * error.linear.x
         control_output.linear.y = self.Kp_linear * error.linear.y
         control_output.linear.z = self.Kp_linear * error.linear.z
-        control_output.angular.x = self.Kp_angular * error.angular.x
-        control_output.angular.y = self.Kp_angular * error.angular.y
+        control_output.angular.x = -self.Kp_angular * error.angular.x
+        control_output.angular.y = -self.Kp_angular * error.angular.y
         control_output.angular.z = self.Kp_angular * error.angular.z
 
         # limit the control input
